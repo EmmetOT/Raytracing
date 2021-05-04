@@ -10,7 +10,8 @@ struct hit_record;
 class material
 {
 public:
-	virtual bool scatter(const ray& r_in, const hit_record& rec, colour& attenutation, ray& scattered) const = 0;
+	virtual bool scatter(const ray& r_in, const hit_record& rec, colour& attenuation, ray& scattered) const = 0;
+	virtual colour emitted(double u, double v, const vec3& p) const { return colour(0, 0, 0); }
 };
 
 class lambertian : public material
@@ -18,7 +19,7 @@ class lambertian : public material
 public:
 	lambertian(const colour& a) : albedo(a) {}
 
-	virtual bool scatter(const ray& r_in, const hit_record& rec, colour& attenutation, ray& scattered) const override
+	virtual bool scatter(const ray& r_in, const hit_record& rec, colour& attenuation, ray& scattered) const override
 	{
 		vec3 scatter_direction = random_in_hemisphere(rec.normal);
 
@@ -27,7 +28,7 @@ public:
 			scatter_direction = rec.normal;
 
 		scattered = ray(rec.p, scatter_direction, r_in.time());
-		attenutation = albedo;
+		attenuation = albedo;
 		return true;
 	}
 
@@ -93,6 +94,26 @@ private:
 		r0 *= r0;
 		return r0 + (1 - r0) * pow((1 - cosine), 5);
 	}
+};
+
+class light : public material
+{
+public:
+	light(colour c) : emit_colour(c) {}
+
+	virtual bool scatter(const ray& r, const hit_record& rec, colour& attenuation, ray& scattered) const override
+	{
+		// rays stop here (in a physical sense, they "start" here)
+		return false;
+	}
+
+	virtual colour emitted(double u, double v, const vec3& p) const override
+	{
+		return emit_colour;
+	}
+
+public: 
+	colour emit_colour;
 };
 
 #endif
